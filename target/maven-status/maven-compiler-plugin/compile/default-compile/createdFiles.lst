@@ -1,0 +1,7 @@
+com\auth\userauth\service\JwtService.class
+com\auth\userauth\model\AuthResponse.class
+com\auth\userauth\config\SecurityConfig.class
+com\auth\userauth\model\AuthRequest.class
+com\auth\userauth\model\User.class
+com\auth\userauth\service\AuthenticationService.class
+com\auth\userauth\filter\JwtAuthenticationFilter.class
