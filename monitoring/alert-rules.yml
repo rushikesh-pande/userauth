@@ -1,0 +1,79 @@
+# Monitoring Enhancement: Prometheus Alert Rules for userauth
+# Deploy to AlertManager alongside Prometheus scrape config.
+groups:
+  - name: userauth_alerts
+    interval: 30s
+    rules:
+
+      # ── High Error Rate ──────────────────────────────────────────────────────
+      - alert: HighErrorRate_userauth
+        expr: |
+          rate(userauth_errors_total{service="userauth"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: userauth
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on userauth"
+
+      # ── High HTTP Latency ────────────────────────────────────────────────────
+      - alert: HighLatency_userauth
+        expr: |
+          histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{service="userauth"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: userauth
+        annotations:
+          summary: "p95 latency above 2s on userauth"
+          description: "p95 latency is {{ $value }}s on userauth"
+
+      # ── Service Down ─────────────────────────────────────────────────────────
+      - alert: ServiceDown_userauth
+        expr: |
+          up{job="userauth"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: userauth
+        annotations:
+          summary: "userauth is DOWN"
+          description: "userauth Prometheus target is not reachable"
+
+      # ── High Heap Memory ─────────────────────────────────────────────────────
+      - alert: HighHeapMemory_userauth
+        expr: |
+          (jvm_memory_used_bytes{service="userauth",area="heap"} /
+           jvm_memory_max_bytes{service="userauth",area="heap"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: userauth
+        annotations:
+          summary: "JVM Heap above 85% on userauth"
+          description: "Heap usage is {{ $value | humanizePercentage }} on userauth"
+
+      # ── Too Many 5xx Responses ───────────────────────────────────────────────
+      - alert: High5xxRate_userauth
+        expr: |
+          rate(http_server_requests_seconds_count{service="userauth",status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: userauth
+        annotations:
+          summary: "High 5xx rate on userauth"
+          description: "5xx rate is {{ $value | humanize }} req/s on userauth"
+
+      # ── High CPU Usage ───────────────────────────────────────────────────────
+      - alert: HighCpuUsage_userauth
+        expr: |
+          process_cpu_usage{service="userauth"} > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          service: userauth
+        annotations:
+          summary: "CPU above 80% on userauth"
+          description: "CPU usage is {{ $value | humanizePercentage }} on userauth"
